@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Сапер</title>
+    <style>
+        body {
+            font-family: system-ui;
+            text-align: center;
+        }
+        
+        .game-info {
+            margin: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        table {
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+
+        td {
+            border: 2px solid #333;
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            background-color: #ccc;
+            font-weight: bold;
+        }
+
+        td.revealed {
+            background-color: #eee;
+            cursor: default;
+        }
+        
+        td.mine {
+            background-color: #ff4444;
+        }
+        
+        td.flag {
+            background-color: #ffd700;
+        }
+
+        .number-1 { color: blue; }
+        .number-2 { color: green; }
+        .number-3 { color: red; }
+        .number-4 { color: darkblue; }
+        .number-5 { color: darkred; }
+        .number-6 { color: teal; }
+        .number-7 { color: black; }
+        .number-8 { color: gray; }
+
+        button {
+            margin: 10px;
+            padding: 10px 15px;
+            font-family: system-ui;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .game-over {
+            color: red;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px;
+        }
+        
+        .game-won {
+            color: green;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-info">Мины: <span id="mineCount">6</span> | Флаги: <span id="flagCount">0</span></div>
+    <button onclick="expandField()">Расширить поле (+6 ячеек)</button>
+    <button onclick="restartGame()">Новая игра</button>
+    <div id="message"></div>
+    <div id="tableContainer"></div>
+
+    <script>
+        let fieldSize = 30;
+        let mineCount = 6;
+        let flagCount = 0;
+        let gameOver = false;
+        let gameWon = false;
+        let firstClick = true;
+        let firstClickIndex = -1;
+        
+        let field = [];
+        let cellStates = [];
+        
+        const container = document.getElementById("tableContainer");
+        const table = document.createElement("table");
+        
+        function initializeGame() {
+            field = Array(fieldSize).fill(0);
+            cellStates = Array(fieldSize).fill('hidden');
+            gameOver = false;
+            gameWon = false;
+            flagCount = 0;
+            firstClick = true;
+            firstClickIndex = -1;
+            
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('mineCount').textContent = mineCount;
+            document.getElementById('flagCount').textContent = flagCount;
+            
+            createTable();
+        }
+        
+        function placeMines(avoidIndex) {
+            field = Array(fieldSize).fill(0);
+            
+            let minesPlaced = 0;
+            const cols = 6;
+            const avoidIndices = getAdjacentIndices(avoidIndex, cols);
+            avoidIndices.push(avoidIndex);
+            
+            while (minesPlaced < mineCount) {
+                const randomIndex = Math.floor(Math.random() * fieldSize);
+                if (!avoidIndices.includes(randomIndex) && field[randomIndex] !== 9) {
+                    field[randomIndex] = 9;
+                    minesPlaced++;
+                }
+            }
+            
+            for (let i = 0; i < fieldSize; i++) {
+                if (field[i] !== 9) {
+                    let count = 0;
+                    const row = Math.floor(i / cols);
+                    const col = i % cols;
+                    
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (dr === 0 && dc === 0) continue;
+                            
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            
+                            if (newRow >= 0 && newRow < Math.ceil(fieldSize / cols) && 
+                                newCol >= 0 && newCol < cols) {
+                                const neighborIndex = newRow * cols + newCol;
+                                if (neighborIndex < fieldSize && field[neighborIndex] === 9) {
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                    field[i] = count;
+                }
+            }
+        }
+        
+        function getAdjacentIndices(index, cols) {
+            const indices = [];
+            const row = Math.floor(index / cols);
+            const col = index % cols;
+            
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+                    
+                    if (newRow >= 0 && newRow < Math.ceil(fieldSize / cols) && 
+                        newCol >= 0 && newCol < cols) {
+                        const neighborIndex = newRow * cols + newCol;
+                        if (neighborIndex < fieldSize) {
+                            indices.push(neighborIndex);
+                        }
+                    }
+                }
+            }
+            return indices;
+        }
+        
+        function createTable() {
+            table.innerHTML = "";
+            
+            const cols = 6;
+            const rows = Math.ceil(fieldSize / cols);
+            
+            for (let i = 0; i < rows; i++) {
+                const row = document.createElement("tr");
+                
+                for (let j = 0; j < cols; j++) {
+                    const index = i * cols + j;
+                    if (index < fieldSize) {
+                        const cell = document.createElement("td");
+                        
+                        cell.addEventListener('click', () => revealCell(index));
+                        cell.addEventListener('contextmenu', (e) => {
+                            e.preventDefault();
+                            toggleFlag(index);
+                        });
+                        
+                        updateCellAppearance(cell, index);
+                        row.appendChild(cell);
+                    } else {
+                        const emptyCell = document.createElement("td");
+                        emptyCell.textContent = "";
+                        row.appendChild(emptyCell);
+                    }
+                }
+                table.appendChild(row);
+            }
+        }
+        
+        function updateCellAppearance(cell, index) {
+            cell.className = '';
+            cell.textContent = '';
+            
+            if (cellStates[index] === 'revealed') {
+                cell.classList.add('revealed');
+                if (field[index] === 9) {
+                    cell.classList.add('mine');
+                    cell.textContent = '💣';
+                } else if (field[index] > 0) {
+                    cell.classList.add(`number-${field[index]}`);
+                    cell.textContent = field[index];
+                }
+            } else if (cellStates[index] === 'flagged') {
+                cell.classList.add('flag');
+                cell.textContent = '🚩';
+            }
+        }
+        
+        function revealCell(index) {
+            if (gameOver || gameWon || cellStates[index] === 'revealed' || cellStates[index] === 'flagged') {
+                return;
+            }
+            
+            if (firstClick) {
+                firstClick = false;
+                firstClickIndex = index;
+                placeMines(index);
+            }
+            
+            cellStates[index] = 'revealed';
+            
+            if (field[index] === 9) {
+                gameOver = true;
+                revealAllMines();
+                document.getElementById('message').innerHTML = '<div class="game-over">Игра окончена! Вы наступили на мину!</div>';
+            } else if (field[index] === 0) {
+                revealAdjacentCells(index);
+            }
+            
+            checkWinCondition();
+            createTable();
+        }
+        
+        function revealAdjacentCells(index) {
+            const cols = 6;
+            const row = Math.floor(index / cols);
+            const col = index % cols;
+            
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+                    
+                    if (newRow >= 0 && newRow < Math.ceil(fieldSize / cols) && 
+                        newCol >= 0 && newCol < cols) {
+                        const neighborIndex = newRow * cols + newCol;
+                        if (neighborIndex < fieldSize && 
+                            cellStates[neighborIndex] === 'hidden' && 
+                            field[neighborIndex] !== 9) {
+                            cellStates[neighborIndex] = 'revealed';
+                            if (field[neighborIndex] === 0) {
+                                revealAdjacentCells(neighborIndex);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        function toggleFlag(index) {
+            if (gameOver || gameWon || cellStates[index] === 'revealed') {
+                return;
+            }
+            
+            if (cellStates[index] === 'flagged') {
+                cellStates[index] = 'hidden';
+                flagCount--;
+            } else {
+                cellStates[index] = 'flagged';
+                flagCount++;
+            }
+            
+            document.getElementById('flagCount').textContent = flagCount;
+            createTable();
+        }
+        
+        function checkWinCondition() {
+            let allNonMineCellsRevealed = true;
+            
+            for (let i = 0; i < fieldSize; i++) {
+                if (field[i] !== 9 && cellStates[i] !== 'revealed') {
+                    allNonMineCellsRevealed = false;
+                    break;
+                }
+            }
+            
+            if (allNonMineCellsRevealed) {
+                gameWon = true;
+                for (let i = 0; i < fieldSize; i++) {
+                    if (field[i] === 9 && cellStates[i] !== 'flagged') {
+                        cellStates[i] = 'flagged';
+                        flagCount++;
+                    }
+                }
+                document.getElementById('flagCount').textContent = flagCount;
+                document.getElementById('message').innerHTML = '<div class="game-won">Поздравляем! Вы выиграли! Все безопасные ячейки открыты!</div>';
+            }
+        }
+        
+        function revealAllMines() {
+            for (let i = 0; i < fieldSize; i++) {
+                if (field[i] === 9) {
+                    cellStates[i] = 'revealed';
+                }
+            }
+        }
+        
+        function expandField() {
+            if (gameOver) {
+                restartGame();
+                return;
+            }
+            
+            if (gameWon) {
+                gameWon = false;
+                document.getElementById('message').innerHTML = '';
+            }
+            
+            const expansionSize = 6;
+            const oldSize = fieldSize;
+            fieldSize += expansionSize;
+            mineCount += 2;
+
+            for (let i = 0; i < expansionSize; i++) {
+                field.push(0);
+                cellStates.push('hidden');
+            }
+            
+            let minesAdded = 0;
+            while (minesAdded < 2) {
+                const randomIndex = oldSize + Math.floor(Math.random() * expansionSize);
+                if (field[randomIndex] !== 9) {
+                    field[randomIndex] = 9;
+                    minesAdded++;
+                }
+            }
+            
+            const cols = 6;
+            for (let i = 0; i < fieldSize; i++) {
+                if (field[i] !== 9) {
+                    let count = 0;
+                    const row = Math.floor(i / cols);
+                    const col = i % cols;
+                    
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (dr === 0 && dc === 0) continue;
+                            
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            
+                            if (newRow >= 0 && newRow < Math.ceil(fieldSize / cols) && 
+                                newCol >= 0 && newCol < cols) {
+                                const neighborIndex = newRow * cols + newCol;
+                                if (neighborIndex < fieldSize && field[neighborIndex] === 9) {
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                    field[i] = count;
+                }
+            }
+            
+            document.getElementById('mineCount').textContent = mineCount;
+            document.getElementById('flagCount').textContent = flagCount;
+            createTable();
+            
+            checkWinCondition();
+        }
+        
+        function restartGame() {
+            fieldSize = 30;
+            mineCount = 6;
+            initializeGame();
+        }
+        
+        initializeGame();
+        container.appendChild(table);
+    </script>
+</body>
+</html>
