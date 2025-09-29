@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>kt3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333333;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c5038;
+        }
+
+        .menu {
+            list-style: none;
+            background-color: #355e34;
+            border-radius: 5px;
+            overflow: visible;
+        }
+
+        .menu>li {
+            position: relative;
+            border-bottom: 1px solid #2c503a;
+        }
+
+        .menu>li:last-child {
+            border-bottom: none;
+        }
+
+        .menu a {
+            display: block;
+            padding: 12px 20px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .menu a:hover {
+            background-color: #2c5035;
+        }
+
+        .menu a.active {
+            background-color: #016e1d;
+        }
+
+        .has-submenu::after {
+            content: "▶";
+            position: absolute;
+            right: 15px;
+            transition: transform 0.3s ease;
+            font-size: 0.8em;
+        }
+
+        .has-submenu.active::after {
+            transform: rotate(90deg);
+        }
+
+        .menu>li>.submenu {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 100%;
+            min-width: 200px;
+            background-color: #2d502c;
+            border-radius: 0 0 5px 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            list-style: none;
+        }
+
+        .submenu .submenu {
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: 0;
+            min-width: 200px;
+            background-color: #284224;
+            border-radius: 0 5px 5px 5px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 101;
+            list-style: none;
+        }
+
+        .submenu li {
+            border-bottom: 1px solid #345e3a;
+            position: relative;
+        }
+
+        .submenu li:last-child {
+            border-bottom: none;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: #095f1c;
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Каталог товаров</h1>
+        <ul class="menu" id="mainMenu">
+            <li>
+                <a href="#" class="has-submenu">Книги</a>
+                <ul class="submenu">
+                    <li>
+                        <a href="#" class="has-submenu">Отечественные</a>
+                        <ul class="submenu">
+                            <li><a href="#">Классика</a></li>
+                            <li><a href="#">Современная проза</a></li>
+                            <li><a href="#">Фантастика</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#" class="has-submenu">Зарубежные</a>
+                        <ul class="submenu">
+                            <li><a href="#">Детективы</a></li>
+                            <li><a href="#">Научная фантастика</a></li>
+                            <li><a href="#">Исторические</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="#" class="has-submenu">Электроника</a>
+                <ul class="submenu">
+                    <li><a href="#">Смартфоны</a></li>
+                    <li><a href="#">Ноутбуки</a></li>
+                    <li><a href="#">Телевизоры</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#" class="has-submenu">Аудиокниги</a>
+                <ul class="submenu">
+                    <li>
+                        <a href="#" class="has-submenu">Отечественные</a>
+                        <ul class="submenu">
+                            <li><a href="#">Классика</a></li>
+                            <li><a href="#">Современная проза</a></li>
+                            <li><a href="#">Фантастика</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#" class="has-submenu">Зарубежные</a>
+                        <ul class="submenu">
+                            <li><a href="#">Детективы</a></li>
+                            <li><a href="#">Научная фантастика</a></li>
+                            <li><a href="#">Исторические</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const menu = document.getElementById("mainMenu");
+            const notification = document.getElementById("notification");
+
+            // 1. найти все li с подменю и добавить им класс
+            const allLiWithSubmenu = document.querySelectorAll("li:has(ul)");
+            allLiWithSubmenu.forEach((li) => {
+                const link = li.querySelector("a");
+                if (link) {
+                    link.classList.add("has-submenu");
+                }
+            });
+
+            // 2. В цикле каждой li задать обработчик
+            allLiWithSubmenu.forEach((li) => {
+                li.addEventListener("click", function (e) {
+                    // 2.3 Остановить всплытие
+                    e.stopPropagation();
+
+                    const link = this.querySelector("a");
+                    if (!link) return;
+
+                    // 2.1 Найти ближайший ВЛОЖЕННЫЙ ul
+                    const submenu = this.querySelector(".submenu");
+
+                    if (submenu) {
+                        // 2.2 Отразить hidden (переключить видимость)
+                        if (submenu.style.display === "block") {
+                            submenu.style.display = "none";
+                            link.classList.remove("active");
+                        } else {
+                            // закрываем другие подменю на том же уровне
+                            const siblingSubmenus =
+                                this.parentElement.querySelectorAll(".submenu");
+                            siblingSubmenus.forEach((sibling) => {
+                                if (sibling !== submenu) {
+                                    sibling.style.display = "none";
+                                    const siblingLink =
+                                        sibling.parentElement.querySelector("a");
+                                    if (siblingLink) siblingLink.classList.remove("active");
+                                }
+                            });
+
+                            // открываем текущее подменю
+                            submenu.style.display = "block";
+                            link.classList.add("active");
+                        }
+                    }
+                });
+            });
+
+            // обработчик для ссылок без подменю
+            const linksWithoutSubmenu = document.querySelectorAll(
+                ".menu a:not(.has-submenu)"
+            );
+            linksWithoutSubmenu.forEach((link) => {
+                link.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Показываем уведомление
+                    notification.textContent = `Вы можете перейти по ссылке: "${this.textContent}"`;
+                    notification.classList.add("show");
+
+                    // скрываем уведомление через 3 секунды
+                    setTimeout(() => {
+                        notification.classList.remove("show");
+                    }, 3000);
+                    closeAllSubmenus();
+                });
+            });
+
+            // закрытывашка всех подменю
+            function closeAllSubmenus() {
+                const allSubmenus = document.querySelectorAll(".submenu");
+                const allActiveLinks = document.querySelectorAll(".menu a.active");
+
+                allSubmenus.forEach((submenu) => {
+                    submenu.style.display = "none";
+                });
+
+                allActiveLinks.forEach((link) => {
+                    link.classList.remove("active");
+                });
+            }
+
+            // закрывашка меню при мисклике
+            document.addEventListener("click", function (e) {
+                if (!menu.contains(e.target)) {
+                    closeAllSubmenus();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
