@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>kt 1</title>
+    <style>
+      table {
+        border-collapse: collapse;
+        margin: 20px;
+        font-family: system-ui;
+      }
+
+      td {
+        border: 1px solid #000000;
+        padding: 20px;
+        text-align: center;
+        min-width: 20px;
+      }
+
+      .orange {
+        font-weight: bold;
+      }
+
+      button {
+        margin: 20px;
+        padding: 10px 15px;
+        font-family: system-ui;
+        font-size: 15px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <button onclick="addNumber()">Нажми на меня</button>
+    <div id="tableContainer"></div>
+
+    <script>
+      const numbers = Array.from({ length: 30 }, () =>
+        Math.floor(Math.random() * 100)
+      );
+      const container = document.getElementById("tableContainer");
+      const table = document.createElement("table");
+
+      function createCell(number) {
+        const cell = document.createElement("td");
+        cell.textContent = number;
+
+        if (number >= 50) {
+          const intensity = (number - 50) / (99 - 50);
+          const greenComponent = 165 - Math.floor(intensity * 65);
+          cell.style.backgroundColor = `rgb(255, ${greenComponent}, 0)`;
+          cell.classList.add("orange");
+        }
+
+        return cell;
+      }
+
+      function createTable() {
+        table.innerHTML = "";
+
+        const cols = 6;
+        const rows = Math.ceil(numbers.length / cols);
+
+        for (let i = 0; i < rows; i++) {
+          const row = document.createElement("tr");
+
+          for (let j = 0; j < cols; j++) {
+            const index = i * cols + j;
+            if (index < numbers.length) {
+              const cell = createCell(numbers[index]);
+              row.appendChild(cell);
+            } else {
+              const emptyCell = document.createElement("td");
+              emptyCell.textContent = "";
+              row.appendChild(emptyCell);
+            }
+          }
+          table.appendChild(row);
+        }
+      }
+
+      function addNumber() {
+        const newNumber = Math.floor(Math.random() * 100);
+        numbers.push(newNumber);
+        createTable();
+      }
+      createTable();
+      container.appendChild(table);
+    </script>
+  </body>
+</html>
