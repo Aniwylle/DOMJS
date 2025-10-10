@@ -79,6 +79,7 @@
         align-items: center;
       }
 
+      /* квадратик где цифры показывает */
       .value-display {
         background: #2a3a3a;
         padding: 5px 12px;
@@ -90,11 +91,13 @@
         border: 1px solid #3a5a5a;
       }
 
+      /* контейнер для ползунка */
       .slider-container {
         position: relative;
         height: 50px;
       }
 
+      /* серая полоска под ползунком */
       .slider-track {
         position: absolute;
         top: 50%;
@@ -105,6 +108,7 @@
         border-radius: 3px;
       }
 
+      /* синяя полоска, которая заполняется */
       .slider-progress {
         position: absolute;
         top: 50%;
@@ -114,6 +118,7 @@
         border-radius: 3px;
       }
 
+      /* сам ползунок */
       .slider-thumb {
         position: absolute;
         top: 50%;
@@ -129,16 +134,19 @@
         z-index: 10;
       }
 
+      /* красивая наводка у кружка */
       .slider-thumb:hover {
         transform: translate(-50%, -50%) scale(1.1);
         box-shadow: 0 3px 8px rgba(0, 255, 255, 0.3);
       }
 
+      /* активно держатель ползунка */
       .slider-thumb.active {
         transform: translate(-50%, -50%) scale(1.2);
         box-shadow: 0 4px 10px rgba(0, 255, 255, 0.5);
       }
 
+      /* цифры под ползунком */
       .slider-labels {
         display: flex;
         justify-content: space-between;
@@ -147,6 +155,7 @@
         font-size: 14px;
       }
 
+      /* отослать всей школе */
       .submit-btn {
         display: block;
         width: 100%;
@@ -165,11 +174,13 @@
         border: 1px solid #3a6a6a;
       }
 
+      /* когда наводим на кнопку */
       .submit-btn:hover {
         background: #3a6a6a;
         box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
       }
 
+      /* блок рещультата */
       .result {
         margin-top: 30px;
         padding: 20px;
@@ -203,6 +214,7 @@
         color: #70e0e0;
       }
 
+      /* для крутых юзеров телефончиков */
       @media (max-width: 600px) {
         .container {
           padding: 25px;
@@ -333,6 +345,7 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+      // массив со всеми ползунками и их настройками      
         const sliders = [
           {
             id: "age",
@@ -340,10 +353,10 @@
             progress: document.getElementById("age-progress"),
             valueDisplay: document.getElementById("age-value"),
             min: 18,
-            max: 65,
+            max: 60,
             value: 25,
             step: 1,
-            formatValue: (val) => `${val} лет`,
+            formatValue: (val) => val >= 60 ? "60+" : val.toString()
           },
           {
             id: "guests",
@@ -383,10 +396,12 @@
           },
         ];
 
+        // для каждого ползунка запускаем функцию инициализации
         sliders.forEach((slider) => {
           initSlider(slider);
         });
 
+        // Функция которая делает ползунок рабочим
         function initSlider(slider) {
           const {
             thumb,
@@ -399,9 +414,11 @@
             formatValue,
           } = slider;
 
+          // запоминаем текущее значение
           slider.currentValue = value;
           updateSlider(slider);
 
+          // когда нажимаем на кружок, начинаем перетаскивание
           thumb.addEventListener("mousedown", startDrag);
 
           function startDrag(e) {
@@ -417,6 +434,7 @@
             const track = container.querySelector(".slider-track");
             const rect = track.getBoundingClientRect();
 
+            // считаем куда кликнули относительно полоски
             let x = e.clientX - rect.left;
             x = Math.max(0, Math.min(x, rect.width));
 
@@ -436,6 +454,7 @@
             document.removeEventListener("mouseup", stopDrag);
           }
 
+          // чтобы можно было кликать по полоске и прыгать туда
           progress.parentElement.addEventListener("click", function (e) {
             const track = this.querySelector(".slider-track");
             const rect = track.getBoundingClientRect();
